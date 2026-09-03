@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07131d">
+  <title>摄像头录像工具</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">WEBCAM CAPTURE</p>
+      <h1>摄像头录像工具</h1>
+    </div>
+    <div class="status-chip" id="cameraStatus" data-state="idle" role="status" aria-live="polite">
+      <span class="status-dot"></span>
+      <span>摄像头未连接</span>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="preview-panel panel" aria-labelledby="previewTitle">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">实时取景</p>
+          <h2 id="previewTitle">录像画面</h2>
+        </div>
+        <div class="record-indicator" id="recordIndicator" hidden>
+          <span></span>录制中 <strong id="recordTimer">00:00</strong>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <video id="sourceVideo" autoplay muted playsinline hidden></video>
+        <canvas id="previewCanvas" width="1280" height="720" aria-label="摄像头实时预览"></canvas>
+        <div class="empty-state" id="emptyState">
+          <div class="camera-glyph" aria-hidden="true"></div>
+          <strong>等待摄像头画面</strong>
+          <span>请在右侧选择设备并打开摄像头</span>
+        </div>
+      </div>
+
+      <div class="stream-stats" aria-live="polite">
+        <span id="resolutionStat">— × —</span>
+        <span id="fpsStat">— fps</span>
+        <span id="zoomStat">1.0×</span>
+        <span id="codecStat">尚未录制</span>
+      </div>
+    </section>
+
+    <aside class="control-panel panel" aria-label="录像控制">
+      <section class="control-section">
+        <div class="section-title-row">
+          <div>
+            <p class="section-kicker">输入</p>
+            <h2>摄像头</h2>
+          </div>
+          <button class="icon-button" id="refreshDevicesButton" type="button" title="刷新摄像头列表" aria-label="刷新摄像头列表">↻</button>
+        </div>
+
+        <label for="cameraSelect">选择设备</label>
+        <select id="cameraSelect">
+          <option value="">正在读取设备……</option>
+        </select>
+
+        <div class="field-grid">
+          <div>
+            <label for="resolutionSelect">分辨率</label>
+            <select id="resolutionSelect">
+              <option value="1920x1080">1920 × 1080</option>
+              <option value="1280x720" selected>1280 × 720</option>
+              <option value="640x480">640 × 480</option>
+            </select>
+          </div>
+          <div>
+            <label for="fpsSelect">帧率</label>
+            <select id="fpsSelect">
+              <option value="60">60 fps</option>
+              <option value="30" selected>30 fps</option>
+              <option value="25">25 fps</option>
+              <option value="15">15 fps</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="primary-button" id="openCameraButton" type="button">打开摄像头</button>
+          <button class="secondary-button" id="closeCameraButton" type="button" disabled>关闭</button>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <p class="section-kicker">画面控制</p>
+        <h2>变焦方式</h2>
+        <fieldset class="segmented-control" id="zoomModeControl">
+          <legend class="sr-only">选择变焦方式</legend>
+          <label>
+            <input type="radio" name="zoomMode" value="driver" checked>
+            <span>驱动变焦</span>
+          </label>
+          <label>
+            <input type="radio" name="zoomMode" value="software">
+            <span>软件变焦</span>
+          </label>
+        </fieldset>
+
+        <div class="range-field" id="driverZoomField">
+          <div class="range-label">
+            <label for="driverZoom">驱动倍率</label>
+            <output id="driverZoomValue" for="driverZoom">—</output>
+          </div>
+          <input id="driverZoom" type="range" min="1" max="1" step="0.1" value="1" disabled>
+        </div>
+
+        <div class="range-field" id="softwareZoomField" hidden>
+          <div class="range-label">
+            <label for="softwareZoom">软件倍率</label>
+            <output id="softwareZoomValue" for="softwareZoom">1.0×</output>
+          </div>
+          <input id="softwareZoom" type="range" min="1" max="4" step="0.1" value="1">
+        </div>
+
+        <p class="help-text" id="zoomHelp">打开摄像头后将检测驱动是否向浏览器公开变焦能力。</p>
+      </section>
+
+      <section class="control-section recording-controls">
+        <p class="section-kicker">输出</p>
+        <h2>录像</h2>
+        <label for="filenameInput">文件名</label>
+        <div class="filename-field">
+          <input id="filenameInput" type="text" maxlength="80" autocomplete="off" spellcheck="false">
+          <span id="filenameExtension">.webm</span>
+        </div>
+
+        <div class="button-row">
+          <button class="record-button" id="startRecordingButton" type="button" disabled><span></span>开始录像</button>
+          <button class="secondary-button" id="stopRecordingButton" type="button" disabled>停止录像</button>
+        </div>
+        <button class="save-button" id="saveRecordingButton" type="button" disabled>保存录像到本地</button>
+        <p class="help-text">录像先保存在浏览器内存中，停止后再保存。长时间、高分辨率录像会占用较多内存。</p>
+      </section>
+    </aside>
+
+    <section class="playback-panel panel" id="playbackPanel" hidden aria-labelledby="playbackTitle">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">最近一次录像</p>
+          <h2 id="playbackTitle">回放确认</h2>
+        </div>
+        <span class="recording-size" id="recordingSize">—</span>
+      </div>
+      <video id="playbackVideo" controls playsinline></video>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
