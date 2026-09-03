@@ -88,6 +88,8 @@ class ServerTests(unittest.TestCase):
         self.assertIn("showSaveFilePicker", script)
         self.assertIn("驱动变焦", page)
         self.assertIn("软件变焦", page)
+        self.assertIn("initializeRecordingFormat();", script)
+        self.assertNotIn('<span id="filenameExtension">.webm</span>', page)
 
     def test_project_has_no_python_dependency_manifest(self) -> None:
         """应用仅使用标准库，不应新增 pip 依赖清单。"""

@@ -51,7 +51,7 @@ const state = {
   recordingStartedAt: 0,
   timerId: null,
   mimeType: "",
-  extension: ".webm",
+  extension: "",
   toastTimerId: null,
   zoomRequestId: 0,
 };
@@ -365,6 +365,26 @@ function recordingExtension(mimeType) {
   return mimeType.includes("mp4") ? ".mp4" : ".webm";
 }
 
+function initializeRecordingFormat() {
+  if (typeof MediaRecorder === "undefined") {
+    elements.filenameExtension.textContent = ".不支持";
+    elements.codecStat.textContent = "当前浏览器不支持网页录像";
+    return;
+  }
+  state.mimeType = chooseRecordingMimeType();
+  if (!state.mimeType) {
+    state.extension = "";
+    elements.filenameExtension.textContent = ".自动";
+    elements.codecStat.textContent = "录像格式由浏览器决定";
+    return;
+  }
+  state.extension = recordingExtension(state.mimeType);
+  elements.filenameExtension.textContent = state.extension;
+  elements.codecStat.textContent = state.extension === ".mp4"
+    ? "首选格式：MP4 / H.264"
+    : "当前浏览器回退：WebM";
+}
+
 function cleanupRecordingUrl() {
   if (state.recordingUrl) URL.revokeObjectURL(state.recordingUrl);
   state.recordingUrl = null;
@@ -389,6 +409,8 @@ function startRecording() {
   const options = state.mimeType ? { mimeType: state.mimeType } : {};
   try {
     state.mediaRecorder = new MediaRecorder(state.recordingStream, options);
+    state.mimeType = state.mediaRecorder.mimeType || state.mimeType;
+    state.extension = recordingExtension(state.mimeType);
   } catch (error) {
     // 浏览器声称支持某格式时仍可能因当前分辨率或编码器资源而失败，退回默认编码器再试。
     try {
@@ -519,4 +541,5 @@ window.addEventListener("pagehide", () => {
 });
 
 elements.filenameInput.value = timestampName();
+initializeRecordingFormat();
 listCameras().catch((error) => showToast(`读取摄像头列表失败：${error.message}`, "error"));
